@@ -2,6 +2,8 @@
 
 CSV encode/decoder.
 
+TODO: encoder needs to be implemented
+
 # Decode
 
 ```go
