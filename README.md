@@ -23,3 +23,11 @@ if err := decoder.Decode(&v); err != nil {
 }
 ```
 
+# Benchmark
+
+```
+pkg: github.com/yuichi1004/csve
+BenchmarkDecode-4        1000000              1349 ns/op             128 B/op          3 allocs/op
+BenchmarkRaw-4           2000000               953 ns/op              96 B/op          2 allocs/op
+BenchmarkJson-4          1000000              2087 ns/op             336 B/op          6 allocs/op
+```
