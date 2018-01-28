@@ -21,6 +21,10 @@ var fieldCache sync.Map
 // Decoder reads csv lines from upstream reader and decode the line.
 type Decoder struct {
 	*csv.Reader
+
+	// Spcify location to be used decoding. If not specified, Decoer use time.UTC.
+	Location *time.Location
+
 	line int
 }
 
@@ -34,7 +38,7 @@ func NewDecoder(reader *csv.Reader, useHeader bool) (*Decoder, error) {
 	}
 
 	return &Decoder{
-		reader, 0,
+		reader, time.UTC, 0,
 	}, nil
 }
 
@@ -67,7 +71,7 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 
 	for _, f := range fields {
 		ref := rv.Elem().FieldByIndex(f.fieldindex)
-		if err := f.dec(ref, cols[f.csvindex], f.csvformat); err != nil {
+		if err := f.dec(d, ref, cols[f.csvindex], f.csvformat); err != nil {
 			return errors.Errorf("field %s parse failed (line:%d)", f.fieldname, d.line)
 		}
 	}
@@ -75,9 +79,9 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 	return nil
 }
 
-type fieldDecoder func(v reflect.Value, raw, format string) error
+type fieldDecoder func(d *Decoder, v reflect.Value, raw, format string) error
 
-func intDecoder(v reflect.Value, raw, format string) error {
+func intDecoder(d *Decoder, v reflect.Value, raw, format string) error {
 	n, err := strconv.ParseInt(raw, 10, 64)
 	if err != nil || v.OverflowInt(n) {
 		return err
@@ -86,7 +90,7 @@ func intDecoder(v reflect.Value, raw, format string) error {
 	return nil
 }
 
-func uintDecoder(v reflect.Value, raw, format string) error {
+func uintDecoder(d *Decoder, v reflect.Value, raw, format string) error {
 	n, err := strconv.ParseUint(raw, 10, 64)
 	if err != nil || v.OverflowUint(n) {
 		return err
@@ -95,7 +99,7 @@ func uintDecoder(v reflect.Value, raw, format string) error {
 	return nil
 }
 
-func floatDecoder(v reflect.Value, raw, format string) error {
+func floatDecoder(d *Decoder, v reflect.Value, raw, format string) error {
 	n, err := strconv.ParseFloat(raw, 64)
 	if err != nil || v.OverflowFloat(n) {
 		return err
@@ -104,13 +108,13 @@ func floatDecoder(v reflect.Value, raw, format string) error {
 	return nil
 }
 
-func stringDecoder(v reflect.Value, raw, format string) error {
+func stringDecoder(d *Decoder, v reflect.Value, raw, format string) error {
 	v.SetString(raw)
 	return nil
 }
 
-func timeDecoder(v reflect.Value, raw, format string) error {
-	t, err := time.Parse(format, raw)
+func timeDecoder(d *Decoder, v reflect.Value, raw, format string) error {
+	t, err := time.ParseInLocation(format, raw, d.Location)
 	if err != nil {
 		return err
 	}
@@ -186,12 +190,12 @@ func getFieldDecoder(t reflect.Type) (dec fieldDecoder, err error) {
 		var rdec fieldDecoder
 		rdec, err = getFieldDecoder(t.Elem())
 		if err == nil {
-			dec = func(v reflect.Value, raw, format string) error {
+			dec = func(d *Decoder, v reflect.Value, raw, format string) error {
 				if v.IsNil() {
 					v.Set(reflect.New(v.Type().Elem()))
 				}
 				v = v.Elem()
-				return rdec(v, raw, format)
+				return rdec(d, v, raw, format)
 			}
 		}
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
