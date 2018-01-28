@@ -75,7 +75,7 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 	return nil
 }
 
-type decoder func(v reflect.Value, raw, format string) error
+type fieldDecoder func(v reflect.Value, raw, format string) error
 
 func intDecoder(v reflect.Value, raw, format string) error {
 	n, err := strconv.ParseInt(raw, 10, 64)
@@ -121,7 +121,7 @@ func timeDecoder(v reflect.Value, raw, format string) error {
 
 type field struct {
 	typ        reflect.Type
-	dec        decoder
+	dec        fieldDecoder
 	fieldindex []int
 	fieldname  string
 
@@ -159,24 +159,10 @@ func getFields(t reflect.Type) (fields []field, err error) {
 			format = tags[2]
 		}
 
-		var dec decoder
-		switch f.Type.Kind() {
-		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			dec = intDecoder
-		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-			dec = uintDecoder
-		case reflect.String:
-			dec = stringDecoder
-		case reflect.Float32, reflect.Float64:
-			dec = floatDecoder
-		case reflect.Struct:
-			if f.Type == timeType {
-				dec = timeDecoder
-			} else {
-				continue
-			}
-		default:
-			continue
+		var dec fieldDecoder
+		dec, err = getFieldDecoder(f.Type)
+		if err != nil {
+			return nil, err
 		}
 
 		fields = append(fields, field{
@@ -191,5 +177,39 @@ func getFields(t reflect.Type) (fields []field, err error) {
 	}
 
 	fieldCache.Store(t, fields)
+	return
+}
+
+func getFieldDecoder(t reflect.Type) (dec fieldDecoder, err error) {
+	switch t.Kind() {
+	case reflect.Ptr:
+		var rdec fieldDecoder
+		rdec, err = getFieldDecoder(t.Elem())
+		if err == nil {
+			dec = func(v reflect.Value, raw, format string) error {
+				if v.IsNil() {
+					v.Set(reflect.New(v.Type().Elem()))
+				}
+				v = v.Elem()
+				return rdec(v, raw, format)
+			}
+		}
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		dec = intDecoder
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		dec = uintDecoder
+	case reflect.String:
+		dec = stringDecoder
+	case reflect.Float32, reflect.Float64:
+		dec = floatDecoder
+	case reflect.Struct:
+		if t == timeType {
+			dec = timeDecoder
+		} else {
+			err = errors.New("no field decoder found")
+		}
+	default:
+		err = errors.New("no field decoder found")
+	}
 	return
 }

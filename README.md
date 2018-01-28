@@ -25,9 +25,12 @@ if err := decoder.Decode(&v); err != nil {
 
 # Benchmark
 
+csve has excellent performance comparing to standard encoding/json decoder.
+It just a 50% overhead comparing to raw decoding code.
+
 ```
-pkg: github.com/yuichi1004/csve
-BenchmarkDecode-4        1000000              1349 ns/op             128 B/op          3 allocs/op
-BenchmarkRaw-4           2000000               953 ns/op              96 B/op          2 allocs/op
-BenchmarkJson-4          1000000              2087 ns/op             336 B/op          6 allocs/op
+BenchmarkDecode-4        1000000              1353 ns/op             128 B/op          3 allocs/op
+BenchmarkDecodePtr-4     1000000              1380 ns/op             128 B/op          3 allocs/op
+BenchmarkRaw-4           2000000               942 ns/op              96 B/op          2 allocs/op
+BenchmarkJson-4          1000000              2076 ns/op             336 B/op          6 allocs/op
 ```

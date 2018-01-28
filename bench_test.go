@@ -39,6 +39,22 @@ func BenchmarkDecode(b *testing.B) {
 	}
 }
 
+func BenchmarkDecodePtr(b *testing.B) {
+	type data struct {
+		V1 *string    `csv:"0,v1"`
+		V2 *int64     `csv:"1,v2"`
+		V3 *float64   `csv:"2,v3"`
+		V4 *time.Time `csv:"3,v4,2006-01-02T15:04:05Z07:00"`
+	}
+	r := newBenchCsvReader(`"str",1,2.0,2017-12-24T15:30:00Z` + "\n")
+	dec, _ := NewDecoder(r, false)
+
+	var d data
+	for i := 0; i < b.N; i++ {
+		dec.Decode(&d)
+	}
+}
+
 func BenchmarkRaw(b *testing.B) {
 	type data struct {
 		V1 string

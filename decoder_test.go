@@ -20,6 +20,38 @@ type TestData struct {
 	Time    time.Time `csv:"8,time,2006-01-02T15:04:05Z07:00"`
 }
 
+type TestDataPtr struct {
+	Str     *string    `csv:"0,str"`
+	Int     *int       `csv:"1,int"`
+	Int32   *int32     `csv:"2,int32"`
+	Int64   *int64     `csv:"3,int64"`
+	Uint32  *uint32    `csv:"4,uint32"`
+	Uint64  *uint64    `csv:"5,uint64"`
+	Float32 *float32   `csv:"6,float32"`
+	Float64 *float64   `csv:"7,float64"`
+	Time    *time.Time `csv:"8,time,2006-01-02T15:04:05Z07:00"`
+}
+
+func normalizeTestData(v interface{}) interface{} {
+	switch cv := v.(type) {
+	case *TestData:
+		v = cv
+	case *TestDataPtr:
+		v = &TestData{
+			*cv.Str,
+			*cv.Int,
+			*cv.Int32,
+			*cv.Int64,
+			*cv.Uint32,
+			*cv.Uint64,
+			*cv.Float32,
+			*cv.Float64,
+			*cv.Time,
+		}
+	}
+	return v
+}
+
 func TestMain(t *testing.T) {
 }
 
@@ -76,6 +108,18 @@ func TestDecoder_Decode(t *testing.T) {
 				"str", -1, -32, -64, 32, 64, 3.2, 6.4, time.Unix(1514129400, 0).In(time.UTC),
 			},
 		},
+		{
+			name: "pointer case",
+			fields: fields{
+				Reader: csv.NewReader(strings.NewReader("str,-1,-32,-64,32,64,3.2,6.4,2017-12-24T15:30:00Z")),
+			},
+			args: args{
+				v: &TestDataPtr{},
+			},
+			want: &TestData{
+				"str", -1, -32, -64, 32, 64, 3.2, 6.4, time.Unix(1514129400, 0).In(time.UTC),
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -85,7 +129,7 @@ func TestDecoder_Decode(t *testing.T) {
 			if err := d.Decode(tt.args.v); (err != nil) != tt.wantErr {
 				t.Errorf("Decoder.Decode() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			if !reflect.DeepEqual(tt.args.v, tt.want) {
+			if !reflect.DeepEqual(normalizeTestData(tt.args.v), tt.want) {
 				t.Errorf("Decode() = %v, want %v", tt.args.v, tt.want)
 			}
 		})
