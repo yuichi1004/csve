@@ -191,11 +191,16 @@ func getFieldDecoder(t reflect.Type) (dec fieldDecoder, err error) {
 		rdec, err = getFieldDecoder(t.Elem())
 		if err == nil {
 			dec = func(d *Decoder, v reflect.Value, raw, format string) error {
-				if v.IsNil() {
-					v.Set(reflect.New(v.Type().Elem()))
+				if raw == "" {
+					v.Set(reflect.Zero(v.Type()))
+					return nil
+				} else {
+					if v.IsNil() {
+						v.Set(reflect.New(v.Type().Elem()))
+					}
+					v = v.Elem()
+					return rdec(d, v, raw, format)
 				}
-				v = v.Elem()
-				return rdec(d, v, raw, format)
 			}
 		}
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:

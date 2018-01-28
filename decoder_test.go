@@ -37,17 +37,35 @@ func normalizeTestData(v interface{}) interface{} {
 	case *TestData:
 		v = cv
 	case *TestDataPtr:
-		v = &TestData{
-			*cv.Str,
-			*cv.Int,
-			*cv.Int32,
-			*cv.Int64,
-			*cv.Uint32,
-			*cv.Uint64,
-			*cv.Float32,
-			*cv.Float64,
-			*cv.Time,
+		td := new(TestData)
+		if cv.Str != nil {
+			td.Str = *cv.Str
 		}
+		if cv.Int != nil {
+			td.Int = *cv.Int
+		}
+		if cv.Int32 != nil {
+			td.Int32 = *cv.Int32
+		}
+		if cv.Int64 != nil {
+			td.Int64 = *cv.Int64
+		}
+		if cv.Uint32 != nil {
+			td.Uint32 = *cv.Uint32
+		}
+		if cv.Uint64 != nil {
+			td.Uint64 = *cv.Uint64
+		}
+		if cv.Float32 != nil {
+			td.Float32 = *cv.Float32
+		}
+		if cv.Float64 != nil {
+			td.Float64 = *cv.Float64
+		}
+		if cv.Time != nil {
+			td.Time = *cv.Time
+		}
+		v = td
 	}
 	return v
 }
@@ -110,6 +128,19 @@ func TestDecoder_Decode(t *testing.T) {
 			},
 			want: &TestData{
 				"str", -1, -32, -64, 32, 64, 3.2, 6.4, time.Unix(1514129400, 0).In(time.UTC),
+			},
+		},
+		{
+			name: "pointer nil case",
+			fields: fields{
+				Reader:   csv.NewReader(strings.NewReader(",,,,,,,,2017-12-24T15:30:00")),
+				Location: time.UTC,
+			},
+			args: args{
+				v: &TestDataPtr{},
+			},
+			want: &TestData{
+				"", 0, 0, 0, 0, 0, 0, 0, time.Unix(1514129400, 0).In(time.UTC),
 			},
 		},
 	}
