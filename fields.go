@@ -58,6 +58,14 @@ func timeDecoder(d *Decoder, v reflect.Value, raw, format string) error {
 
 type fieldEncoder func(e *Encoder, v reflect.Value, format string) (raw string, err error)
 
+func stringEncoder(e *Encoder, v reflect.Value, format string) (raw string, err error) {
+	return v.String(), nil
+}
+
+func intEncoder(e *Encoder, v reflect.Value, format string) (raw string, err error) {
+	return strconv.FormatInt(v.Int(), 10), nil
+}
+
 func vEncoder(e *Encoder, v reflect.Value, format string) (raw string, err error) {
 	return fmt.Sprintf("%v", v), nil
 }
@@ -160,13 +168,13 @@ func getFieldEncoder(t reflect.Type) (dec fieldDecoder, enc fieldEncoder, err er
 		}
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		dec = intDecoder
-		enc = vEncoder
+		enc = intEncoder
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		dec = uintDecoder
 		enc = vEncoder
 	case reflect.String:
 		dec = stringDecoder
-		enc = vEncoder
+		enc = stringEncoder
 	case reflect.Float32, reflect.Float64:
 		dec = floatDecoder
 		enc = vEncoder
