@@ -3,6 +3,8 @@ package csve
 import (
 	"bytes"
 	"encoding/csv"
+	"fmt"
+	"os"
 	"testing"
 	"time"
 )
@@ -84,4 +86,29 @@ func TestEncoder_Encode(t *testing.T) {
 			}
 		})
 	}
+}
+
+func ExampleEncoder_Encode() {
+	v := struct {
+		ID      int       `csv:"0,id"`
+		Name    string    `csv:"1,name"`
+		Created time.Time `csv:"2,created,2006-01-02T15:04:05"`
+	}{
+		5, "Yuichi", time.Unix(1514129400, 0),
+	}
+
+	csvWriter := csv.NewWriter(os.Stdout)
+	encoder, err := NewEncoder(csvWriter, false)
+	if err != nil {
+		fmt.Printf("failed to create encoder: %v\n", err)
+		return
+	}
+
+	if err := encoder.Encode(&v); err != nil {
+		fmt.Printf("failed to parse csv: %v\n", err)
+		return
+	}
+	encoder.Flush()
+
+	// Output: 5,Yuichi,2017-12-24T15:30:00
 }
