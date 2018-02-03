@@ -71,6 +71,12 @@ func normalizeTestData(v interface{}) interface{} {
 	return v
 }
 
+func NewTestDataPtr(v1 string, v2 int, v3 int32, v4 int64, v5 uint32, v6 uint64, v7 float32, v8 float64, v9 time.Time) TestDataPtr {
+	return TestDataPtr{
+		&v1, &v2, &v3, &v4, &v5, &v6, &v7, &v8, &v9,
+	}
+}
+
 func TestNewDecoder(t *testing.T) {
 	// skip
 }

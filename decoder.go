@@ -17,7 +17,7 @@ var (
 type Decoder struct {
 	*csv.Reader
 
-	// Spcify location to be used decoding. If not specified, Decoer use time.UTC.
+	// Spcify location to be used decoding. If not specified, Decoder use time.UTC.
 	Location *time.Location
 
 	line int
