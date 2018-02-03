@@ -31,8 +31,9 @@ csve has excellent performance comparing to standard encoding/json decoder.
 It just a 50% overhead comparing to raw decoding code.
 
 ```
-BenchmarkDecode-4        1000000              1353 ns/op             128 B/op          3 allocs/op
-BenchmarkDecodePtr-4     1000000              1380 ns/op             128 B/op          3 allocs/op
-BenchmarkRaw-4           2000000               942 ns/op              96 B/op          2 allocs/op
-BenchmarkJson-4          1000000              2076 ns/op             336 B/op          6 allocs/op
+BenchmarkDecode-4        1000000              1345 ns/op             128 B/op          3 allocs/op
+BenchmarkEncode-4        1000000              1105 ns/op             176 B/op          6 allocs/op
+BenchmarkDecodePtr-4     1000000              1366 ns/op             128 B/op          3 allocs/op
+BenchmarkRaw-4           2000000               973 ns/op              96 B/op          2 allocs/op
+BenchmarkJson-4          1000000              2112 ns/op             336 B/op          6 allocs/op
 ```

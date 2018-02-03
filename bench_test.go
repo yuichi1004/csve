@@ -10,6 +10,12 @@ import (
 
 // decoder benchmark
 
+type voidWriter struct{}
+
+func (w *voidWriter) Write(p []byte) (n int, err error) {
+	return len(p), nil
+}
+
 type benchCsvSrcReader struct {
 	data []byte
 }
@@ -98,5 +104,20 @@ func BenchmarkJson(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		json.Unmarshal(v, &d)
 		time.Parse("2006-01-02T15:04:05Z07:00", d.V4)
+	}
+}
+
+func BenchmarkEncode(b *testing.B) {
+	type data struct {
+		V1 string    `csv:"0,v1"`
+		V2 int64     `csv:"1,v2"`
+		V3 float64   `csv:"2,v3"`
+		V4 time.Time `csv:"3,v4,2006-01-02T15:04:05Z07:00"`
+	}
+	enc, _ := NewEncoder(csv.NewWriter(new(voidWriter)), false)
+
+	var d data
+	for i := 0; i < b.N; i++ {
+		enc.Encode(&d)
 	}
 }
