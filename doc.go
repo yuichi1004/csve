@@ -26,6 +26,5 @@ The following is the quick example for decoding csv value.
 	// Expected Output:
 	// ID:5, Name:Yuichi, Created:2017-12-24 15:30:00 +0000 UTC
 
-NOTE: encoder is not implemented yet and still work in progress.
 */
 package csve
