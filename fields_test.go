@@ -98,8 +98,9 @@ func Test_getFields(t *testing.T) {
 				return
 			}
 			for i := 0; i < len(gotFields); i++ {
-				// ignore decoder to compare
+				// ignore field enc/decoder to compare
 				gotFields[i].dec = nil
+				gotFields[i].enc = nil
 			}
 			if !reflect.DeepEqual(gotFields, tt.wantFields) {
 				t.Errorf("getFields() = %v, want %v", gotFields, tt.wantFields)

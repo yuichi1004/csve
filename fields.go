@@ -2,6 +2,7 @@ package csve
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
@@ -55,9 +56,21 @@ func timeDecoder(d *Decoder, v reflect.Value, raw, format string) error {
 	return nil
 }
 
+type fieldEncoder func(e *Encoder, v reflect.Value, format string) (raw string, err error)
+
+func vEncoder(e *Encoder, v reflect.Value, format string) (raw string, err error) {
+	return fmt.Sprintf("%v", v), nil
+}
+
+func timeEncoder(e *Encoder, v reflect.Value, format string) (raw string, err error) {
+	t := v.Interface().(time.Time)
+	return t.In(e.Location).Format(format), nil
+}
+
 type field struct {
 	typ        reflect.Type
 	dec        fieldDecoder
+	enc        fieldEncoder
 	fieldindex []int
 	fieldname  string
 
@@ -96,13 +109,15 @@ func getFields(t reflect.Type) (fields []field, err error) {
 		}
 
 		var dec fieldDecoder
-		dec, err = getFieldDecoder(f.Type)
+		var enc fieldEncoder
+		dec, enc, err = getFieldEncoder(f.Type)
 		if err != nil {
 			return nil, err
 		}
 
 		fields = append(fields, field{
 			dec:        dec,
+			enc:        enc,
 			typ:        f.Type,
 			fieldname:  f.Name,
 			fieldindex: f.Index,
@@ -116,11 +131,12 @@ func getFields(t reflect.Type) (fields []field, err error) {
 	return
 }
 
-func getFieldDecoder(t reflect.Type) (dec fieldDecoder, err error) {
+func getFieldEncoder(t reflect.Type) (dec fieldDecoder, enc fieldEncoder, err error) {
 	switch t.Kind() {
 	case reflect.Ptr:
 		var rdec fieldDecoder
-		rdec, err = getFieldDecoder(t.Elem())
+		var renc fieldEncoder
+		rdec, renc, err = getFieldEncoder(t.Elem())
 		if err == nil {
 			dec = func(d *Decoder, v reflect.Value, raw, format string) error {
 				if raw == "" {
@@ -134,18 +150,30 @@ func getFieldDecoder(t reflect.Type) (dec fieldDecoder, err error) {
 					return rdec(d, v, raw, format)
 				}
 			}
+			enc = func(e *Encoder, v reflect.Value, format string) (string, error) {
+				if v.IsNil() {
+					return "", nil
+				}
+				v = v.Elem()
+				return renc(e, v, format)
+			}
 		}
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		dec = intDecoder
+		enc = vEncoder
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		dec = uintDecoder
+		enc = vEncoder
 	case reflect.String:
 		dec = stringDecoder
+		enc = vEncoder
 	case reflect.Float32, reflect.Float64:
 		dec = floatDecoder
+		enc = vEncoder
 	case reflect.Struct:
 		if t == timeType {
 			dec = timeDecoder
+			enc = timeEncoder
 		} else {
 			err = errors.New("no field decoder found")
 		}
