@@ -1,5 +1,7 @@
 # csve
 
+[![GoDoc](https://godoc.org/github.com/yuichi1004/csve?status.svg)](https://godoc.org/github.com/yuichi1004/csve)
+
 CSV encode/decoder.
 
 TODO: encoder needs to be implemented
