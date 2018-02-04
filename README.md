@@ -1,6 +1,7 @@
 # csve
 
 [![GoDoc](https://godoc.org/github.com/yuichi1004/csve?status.svg)](https://godoc.org/github.com/yuichi1004/csve)
+[![CircleCI](https://circleci.com/gh/yuichi1004/csve.svg?style=svg)](https://circleci.com/gh/yuichi1004/csve)
 
 CSV encode/decoder.
 
