@@ -140,14 +140,14 @@ func TestDecoder_Decode(t *testing.T) {
 		{
 			name: "pointer nil case",
 			fields: fields{
-				Reader:   csv.NewReader(strings.NewReader(",,,,,,,,2017-12-24T15:30:00")),
+				Reader:   csv.NewReader(strings.NewReader(",,,,,,,,")),
 				Location: time.UTC,
 			},
 			args: args{
 				v: &TestDataPtr{},
 			},
 			want: &TestData{
-				"", 0, 0, 0, 0, 0, 0, 0, time.Unix(1514129400, 0).In(time.UTC),
+				"", 0, 0, 0, 0, 0, 0, 0, time.Time{},
 			},
 		},
 	}

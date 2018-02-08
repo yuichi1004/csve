@@ -47,9 +47,13 @@ func stringDecoder(d *Decoder, v reflect.Value, raw, format string) error {
 }
 
 func timeDecoder(d *Decoder, v reflect.Value, raw, format string) error {
-	t, err := time.ParseInLocation(format, raw, d.Location)
-	if err != nil {
-		return err
+	var t time.Time
+	if raw != "" {
+		var err error
+		t, err = time.ParseInLocation(format, raw, d.Location)
+		if err != nil {
+			return err
+		}
 	}
 	tv := reflect.ValueOf(t)
 	v.Set(tv)
