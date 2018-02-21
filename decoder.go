@@ -66,7 +66,13 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 
 	for _, f := range fields {
 		ref := rv.Elem().FieldByIndex(f.fieldindex)
-		if err := f.dec(d, ref, cols[f.csvindex], f.csvformat); err != nil {
+
+		var v string
+		if f.csvindex < len(cols) {
+			v = cols[f.csvindex]
+		}
+
+		if err := f.dec(d, ref, v, f.csvformat); err != nil {
 			return errors.Errorf("field %s parse failed (line:%d)", f.fieldname, d.line)
 		}
 	}
