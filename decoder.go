@@ -13,12 +13,20 @@ var (
 	timeType = reflect.TypeOf(time.Time{})
 )
 
+// CustomerDecoder inject your custom decode process.
+// Return true as ok if this logic handles the decode, otherwise Decoder() will
+// fallback to default decode process.
+type CustomDecoder func(d *Decoder, v reflect.Value, raw, format string) (ok bool, err error)
+
 // Decoder reads csv lines from upstream reader and decode the line.
 type Decoder struct {
 	*csv.Reader
 
 	// Spcify location to be used decoding. If not specified, Decoder use time.UTC.
 	Location *time.Location
+
+	// Custom decoder to customize decoding process.
+	CustomDecoder CustomDecoder
 
 	line int
 }
@@ -33,7 +41,7 @@ func NewDecoder(reader *csv.Reader, useHeader bool) (*Decoder, error) {
 	}
 
 	return &Decoder{
-		reader, time.UTC, 0,
+		reader, time.UTC, nil, 0,
 	}, nil
 }
 
@@ -72,8 +80,17 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 			v = cols[f.csvindex]
 		}
 
-		if err := f.dec(d, ref, v, f.csvformat); err != nil {
-			return errors.Errorf("field %s parse failed (line:%d)", f.fieldname, d.line)
+		var ok bool
+		if d.CustomDecoder != nil {
+			ok, err = d.CustomDecoder(d, ref, v, f.csvformat)
+			if err != nil {
+				return errors.Errorf("field %s parse failed (line:%d)", f.fieldname, d.line)
+			}
+		}
+		if !ok {
+			if err := f.dec(d, ref, v, f.csvformat); err != nil {
+				return errors.Errorf("field %s parse failed (line:%d)", f.fieldname, d.line)
+			}
 		}
 	}
 

@@ -85,8 +85,9 @@ func TestDecoder_Decode(t *testing.T) {
 	loc, _ := time.LoadLocation("Asia/Tokyo")
 
 	type fields struct {
-		Reader   *csv.Reader
-		Location *time.Location
+		Reader        *csv.Reader
+		Location      *time.Location
+		CustomDecoder CustomDecoder
 	}
 	type args struct {
 		v interface{}
@@ -125,6 +126,38 @@ func TestDecoder_Decode(t *testing.T) {
 			},
 		},
 		{
+			name: "normal case with custom decoder",
+			fields: fields{
+				Reader:   csv.NewReader(strings.NewReader("str,-1,-32,-64,32,64,3.2,6.4,N/A")),
+				Location: time.UTC,
+				CustomDecoder: func(d *Decoder, v reflect.Value, raw, format string) (ok bool, err error) {
+					val := v.Interface()
+					var t time.Time
+					if t, ok = val.(time.Time); ok {
+						if raw == "N/A" {
+							t = time.Time{}
+						} else {
+							var err error
+							t, err = time.ParseInLocation(format, raw, d.Location)
+							if err != nil {
+								return false, err
+							}
+						}
+						tv := reflect.ValueOf(t)
+						v.Set(tv)
+						return true, nil
+					}
+					return false, nil
+				},
+			},
+			args: args{
+				v: &TestData{},
+			},
+			want: &TestData{
+				"str", -1, -32, -64, 32, 64, 3.2, 6.4, time.Time{},
+			},
+		},
+		{
 			name: "pointer case",
 			fields: fields{
 				Reader:   csv.NewReader(strings.NewReader("str,-1,-32,-64,32,64,3.2,6.4,2017-12-24T15:30:00")),
@@ -154,8 +187,9 @@ func TestDecoder_Decode(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			d := &Decoder{
-				Reader:   tt.fields.Reader,
-				Location: tt.fields.Location,
+				Reader:        tt.fields.Reader,
+				Location:      tt.fields.Location,
+				CustomDecoder: tt.fields.CustomDecoder,
 			}
 			if err := d.Decode(tt.args.v); (err != nil) != tt.wantErr {
 				t.Errorf("Decoder.Decode() error = %v, wantErr %v", err, tt.wantErr)
@@ -188,4 +222,45 @@ func ExampleDecoder_Decode() {
 	fmt.Printf("ID:%d, Name:%s, Created:%v\n", v.ID, v.Name, v.Created)
 
 	// Output: ID:5, Name:Yuichi, Created:2017-12-24 15:30:00 +0000 UTC
+}
+
+func ExampleCustomDecoder() {
+	v := struct {
+		ID      int       `csv:"0,id"`
+		Name    string    `csv:"1,name"`
+		Created time.Time `csv:"2,created,2006-01-02T15:04:05"`
+	}{}
+
+	csvReader := csv.NewReader(strings.NewReader(`5,Yuichi,N/A`))
+	decoder, err := NewDecoder(csvReader, false)
+	if err != nil {
+		fmt.Printf("failed to create decoder: %v\n", err)
+		return
+	}
+	decoder.CustomDecoder = func(d *Decoder, v reflect.Value, raw, format string) (ok bool, err error) {
+		val := v.Interface()
+		var t time.Time
+		if t, ok = val.(time.Time); ok {
+			if raw == "N/A" {
+				t = time.Time{}
+			} else {
+				var err error
+				t, err = time.ParseInLocation(format, raw, d.Location)
+				if err != nil {
+					return false, err
+				}
+			}
+			tv := reflect.ValueOf(t)
+			v.Set(tv)
+			return true, nil
+		}
+		return false, nil
+	}
+	if err := decoder.Decode(&v); err != nil {
+		fmt.Printf("failed to parse csv: %v\n", err)
+		return
+	}
+	fmt.Printf("ID:%d, Name:%s, Created:%v\n", v.ID, v.Name, v.Created)
+
+	// Output: ID:5, Name:Yuichi, Created:0001-01-01 00:00:00 +0000 UTC
 }
