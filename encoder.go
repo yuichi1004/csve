@@ -1,7 +1,6 @@
 package csve
 
 import (
-	"encoding/csv"
 	"reflect"
 	"runtime"
 	"time"
@@ -16,7 +15,7 @@ type CustomEncoder func(e *Encoder, v reflect.Value, format string) (ok bool, ra
 
 // Encoder writes values into csv writer.
 type Encoder struct {
-	*csv.Writer
+	CsvWriter
 
 	// Spcify location to be used encoding. If not specified, Encoder use time.UTC.
 	Location *time.Location
@@ -28,7 +27,7 @@ type Encoder struct {
 // NewEncoder returns a new Encoder which encodes values into csv writer.
 // If useHeader is true, Encoder writes csv header line.
 // NOTE: useHeder is not implemented yet.
-func NewEncoder(writer *csv.Writer, useHeader bool) (*Encoder, error) {
+func NewEncoder(writer CsvWriter, useHeader bool) (*Encoder, error) {
 	return &Encoder{
 		writer, time.UTC, nil,
 	}, nil
@@ -78,5 +77,5 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 		}
 	}
 
-	return e.Writer.Write(encoded)
+	return e.CsvWriter.Write(encoded)
 }

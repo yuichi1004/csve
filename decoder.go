@@ -1,7 +1,6 @@
 package csve
 
 import (
-	"encoding/csv"
 	"reflect"
 	"runtime"
 	"time"
@@ -20,7 +19,7 @@ type CustomDecoder func(d *Decoder, v reflect.Value, raw, format string) (ok boo
 
 // Decoder reads csv lines from upstream reader and decode the line.
 type Decoder struct {
-	*csv.Reader
+	CsvReader
 
 	// Spcify location to be used decoding. If not specified, Decoder use time.UTC.
 	Location *time.Location
@@ -35,7 +34,7 @@ type Decoder struct {
 // If useHeader is true, NewDecoder reads the header line and decode values
 // based on the header.
 // NOTE: useHader is not implemented yet.
-func NewDecoder(reader *csv.Reader, useHeader bool) (*Decoder, error) {
+func NewDecoder(reader CsvReader, useHeader bool) (*Decoder, error) {
 	if useHeader {
 		// TODO impelemnt header usage
 	}

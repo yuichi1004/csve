@@ -95,7 +95,7 @@ func TestEncoder_Encode(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			buf := new(bytes.Buffer)
 			e := &Encoder{
-				Writer:        csv.NewWriter(buf),
+				CsvWriter:     csv.NewWriter(buf),
 				Location:      tt.fields.Location,
 				CustomEncoder: tt.fields.CustomEncoder,
 			}
